@@ -6,16 +6,33 @@ import RadioPlayer from '@/components/RadioPlayer';
 import { Button } from '@/components/ui/button';
 import { Home, Radio as RadioIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PlaylistProvider } from '@/contexts/PlaylistContext';
 
-const Radio = () => {
+// Create a separate component to use the context
+const RadioContent = () => {
   const { theme, setTheme } = useTheme();
   const [selectedChannel, setSelectedChannel] = useState<RadioChannel | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Auto-select the first channel when component mounts
+  useEffect(() => {
+    if (radioChannels.length > 0 && !selectedChannel) {
+      // Add a small delay to simulate loading for a better UX
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setSelectedChannel(radioChannels[0]);
+        setIsLoading(false);
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+  
   // Animation when selecting a channel
   const selectChannel = (channel: RadioChannel) => {
+    if (selectedChannel?.id === channel.id) return;
+    
     setIsLoading(true);
-    setSelectedChannel(null);
     
     // Simulate loading for a smooth transition
     setTimeout(() => {
@@ -101,5 +118,12 @@ const Radio = () => {
     </div>
   );
 };
+
+// Wrap the component with PlaylistProvider to fix the context error
+const Radio = () => (
+  <PlaylistProvider>
+    <RadioContent />
+  </PlaylistProvider>
+);
 
 export default Radio;

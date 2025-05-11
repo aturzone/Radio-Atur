@@ -1,9 +1,11 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { RadioChannel, shuffleArray } from '../data/sampleTracks';
+import { RadioChannel } from '../data/sampleTracks';
+import AudioPlayer from './player/AudioPlayer';
+import { toast } from 'sonner';
 
 interface RadioPlayerProps {
   currentChannel: RadioChannel | null;
@@ -14,70 +16,46 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentChannel }) => {
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [shuffledTracks, setShuffledTracks] = useState<Array<any>>([]);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // Get current track based on index
+  const currentTrack = currentChannel?.tracks[currentTrackIndex] || null;
   
-  // Shuffle tracks when channel changes
+  // When channel changes, start playing the first track
   useEffect(() => {
     if (currentChannel) {
-      const shuffled = shuffleArray([...currentChannel.tracks]);
-      setShuffledTracks(shuffled);
+      console.log("Radio channel changed to:", currentChannel.name);
+      // Reset to first track when changing channels
       setCurrentTrackIndex(0);
       setIsPlaying(true);
+      
+      // Show toast notification
+      toast.success(`Now playing: ${currentChannel.name} radio`);
     } else {
       setIsPlaying(false);
-      setShuffledTracks([]);
     }
   }, [currentChannel]);
-  
-  // Play audio when shuffled tracks change
+
+  // Log whenever the current track changes
   useEffect(() => {
-    if (!audioRef.current || shuffledTracks.length === 0) return;
-    
-    audioRef.current.src = shuffledTracks[currentTrackIndex].url;
-    audioRef.current.load();
-    
-    if (isPlaying) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Playback failed:", error);
-          setIsPlaying(false);
-        });
-      }
+    if (currentTrack) {
+      console.log("Playing radio track:", currentTrack.title, "from channel:", currentChannel?.name);
     }
-  }, [shuffledTracks, currentTrackIndex, isPlaying]);
-  
-  // Handle play/pause
-  useEffect(() => {
-    if (!audioRef.current || shuffledTracks.length === 0) return;
-    
-    if (isPlaying) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Playback failed:", error);
-          setIsPlaying(false);
-        });
-      }
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying, shuffledTracks.length]);
-  
-  // Handle volume change
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = isMuted ? 0 : volume;
-  }, [volume, isMuted]);
+  }, [currentTrack, currentChannel]);
   
   const handleTrackEnd = () => {
-    if (shuffledTracks.length === 0) return;
+    if (!currentChannel || currentChannel.tracks.length === 0) return;
     
-    // Move to next track in shuffle, loop back to start if at end
-    const nextIndex = (currentTrackIndex + 1) % shuffledTracks.length;
+    // Move to next track in the channel, loop back to start if at end
+    const nextIndex = (currentTrackIndex + 1) % currentChannel.tracks.length;
+    console.log("Radio track ended, moving to next track. Current:", currentTrackIndex, "Next:", nextIndex);
     setCurrentTrackIndex(nextIndex);
+    
+    // Notify user of track change
+    if (currentChannel.tracks[nextIndex]) {
+      toast.info(`Now playing: ${currentChannel.tracks[nextIndex].title}`);
+    }
   };
   
   const toggleMute = () => {
@@ -91,7 +69,13 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentChannel }) => {
     }
   };
   
-  const currentTrack = shuffledTracks[currentTrackIndex];
+  const handleTimeUpdate = (time: number) => {
+    setCurrentTime(time);
+  };
+  
+  const handleDurationChange = (newDuration: number) => {
+    setDuration(newDuration);
+  };
   
   return (
     <div className="w-full max-w-md mx-auto animate-fade-in">
@@ -162,11 +146,20 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentChannel }) => {
         </CardContent>
       </Card>
       
-      <audio
-        ref={audioRef}
-        onEnded={handleTrackEnd}
-        className="hidden"
-      />
+      {/* Making sure we pass the correct track to AudioPlayer */}
+      {currentTrack && (
+        <AudioPlayer
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          volume={volume}
+          isMuted={isMuted}
+          onTimeUpdate={handleTimeUpdate}
+          onDurationChange={handleDurationChange}
+          onEnded={handleTrackEnd}
+          isRadioMode={true}
+          currentTime={currentTime}
+        />
+      )}
     </div>
   );
 };

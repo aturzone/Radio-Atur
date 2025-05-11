@@ -1,5 +1,5 @@
 
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat } from 'lucide-react';
 import { Track } from '../../data/sampleTracks';
 
 interface PlayerControlsProps {
@@ -8,6 +8,8 @@ interface PlayerControlsProps {
   onPlayPause: () => void;
   onPrevious: () => void;
   onNext: () => void;
+  isLooping?: boolean;
+  onLoopToggle?: () => void;
 }
 
 const PlayerControls: React.FC<PlayerControlsProps> = ({
@@ -15,7 +17,9 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
   currentTrack,
   onPlayPause,
   onPrevious,
-  onNext
+  onNext,
+  isLooping = false,
+  onLoopToggle
 }) => {
   return (
     <div className="flex items-center gap-2">
@@ -23,6 +27,7 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
         onClick={onPrevious}
         className="p-2 rounded-full hover:bg-gray-light/50 dark:hover:bg-gray-700/50 text-coffee-dark dark:text-coffee-light transition"
         aria-label="Previous track"
+        disabled={!currentTrack}
       >
         <SkipBack size={20} />
       </button>
@@ -40,9 +45,23 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
         onClick={onNext}
         className="p-2 rounded-full hover:bg-gray-light/50 dark:hover:bg-gray-700/50 text-coffee-dark dark:text-coffee-light transition"
         aria-label="Next track"
+        disabled={!currentTrack}
       >
         <SkipForward size={20} />
       </button>
+      
+      {onLoopToggle && (
+        <button
+          onClick={onLoopToggle}
+          className={`p-2 rounded-full hover:bg-gray-light/50 dark:hover:bg-gray-700/50 transition ${
+            isLooping ? 'text-coffee dark:text-coffee-light' : 'text-gray-400 dark:text-gray-600'
+          }`}
+          aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
+          disabled={!currentTrack}
+        >
+          <Repeat size={18} />
+        </button>
+      )}
     </div>
   );
 };

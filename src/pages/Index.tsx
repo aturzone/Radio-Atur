@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import MusicPlayer from '../components/MusicPlayer';
 import PlaylistView from '../components/PlaylistView';
-import { Track, findTrackById, musicLibrary } from '../data/sampleTracks';
+import { Track, findTrackById } from '../data/sampleTracks';
 import { BookAudio, Menu, Coffee, MoonStar, Sun } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from '@/components/ui/drawer';
 import { useTheme } from '../hooks/useTheme';
@@ -10,12 +10,35 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { PlaylistProvider, usePlaylist } from '../contexts/PlaylistContext';
 
-const Index = () => {
+// Create a separate component to use the context
+const MusicPlayerApp = () => {
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [open, setOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { library, selectTrack } = usePlaylist();
+  
+  // Get all tracks in a flattened array (excluding radio stations)
+  const getAllTracks = (): Track[] => {
+    const tracks: Track[] = [];
+    
+    const extractTracks = (folders: typeof library) => {
+      folders.forEach(folder => {
+        // Skip radio stations folder
+        if (folder.id === 'radio-stations-folder') return;
+        
+        tracks.push(...folder.tracks);
+        extractTracks(folder.folders);
+      });
+    };
+    
+    extractTracks(library);
+    return tracks;
+  };
+  
+  const allTracks = getAllTracks();
   
   // Load the current track whenever ID changes
   useEffect(() => {
@@ -24,38 +47,25 @@ const Index = () => {
       return;
     }
     
+    // First try to find in the context
+    const trackFromContext = allTracks.find(track => track.id === currentTrackId);
+    if (trackFromContext) {
+      setCurrentTrack(trackFromContext);
+      return;
+    }
+    
+    // Fallback to sample tracks
     const track = findTrackById(currentTrackId);
     setCurrentTrack(track);
-  }, [currentTrackId]);
+  }, [currentTrackId, allTracks]);
 
-  // Set a default track when the component mounts
-  useEffect(() => {
-    if (musicLibrary.length > 0 && musicLibrary[0].tracks.length > 0) {
-      setCurrentTrackId(musicLibrary[0].tracks[0].id);
-    }
-  }, []);
+  // We no longer set a default track on mount - user must explicitly select a track
   
   const handleTrackSelect = (track: Track) => {
+    selectTrack(track);
     setCurrentTrackId(track.id);
     setOpen(false); // Close the drawer after selecting a track
   };
-  
-  // Get all tracks in a flattened array for previous/next functionality
-  const getAllTracks = (): Track[] => {
-    const tracks: Track[] = [];
-    
-    const extractTracks = (folders: typeof musicLibrary) => {
-      folders.forEach(folder => {
-        tracks.push(...folder.tracks);
-        extractTracks(folder.folders);
-      });
-    };
-    
-    extractTracks(musicLibrary);
-    return tracks;
-  };
-  
-  const allTracks = getAllTracks();
   
   const handlePrevious = () => {
     if (!currentTrackId || allTracks.length === 0) return;
@@ -178,10 +188,10 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-white/30 dark:from-black/50 to-coffee/30 dark:to-coffee-dark/50 backdrop-blur-sm" />
                 
                 <div className="relative z-10 text-center p-6">
-                  <h2 className="text-3xl font-bold text-coffee-dark dark:text-coffee-light mb-2">{currentTrack.title}</h2>
-                  <p className="text-xl text-coffee dark:text-coffee-light mb-4">{currentTrack.artist}</p>
+                  <h2 className="text-3xl font-bold text-coffee-dark dark:text-coffee-light mb-2 animate-fade-in">{currentTrack.title}</h2>
+                  <p className="text-xl text-coffee dark:text-coffee-light mb-4 animate-fade-in">{currentTrack.artist}</p>
                   {currentTrack.album && (
-                    <p className="text-gray-dark dark:text-gray-light italic">From "{currentTrack.album}"</p>
+                    <p className="text-gray-dark dark:text-gray-light italic animate-fade-in">From "{currentTrack.album}"</p>
                   )}
                 </div>
               </>
@@ -213,5 +223,12 @@ const Index = () => {
     </div>
   );
 };
+
+// Wrap the app with the PlaylistProvider
+const Index = () => (
+  <PlaylistProvider>
+    <MusicPlayerApp />
+  </PlaylistProvider>
+);
 
 export default Index;
