@@ -1,0 +1,94 @@
+
+# Cozy Audio Café - Developer Guide
+
+## Project Structure
+
+- `/src/components/` - React components used throughout the application
+- `/src/pages/` - Page components that are rendered for different routes
+- `/src/data/` - Data files including sample tracks and music library structure
+- `/src/hooks/` - Custom React hooks
+- `/src/lib/` - Utility functions and helpers
+- `/public/music/` - Directory for storing music files
+
+## Key Components
+
+1. `MusicPlayer.tsx` - Main audio player with controls
+2. `PlaylistView.tsx` - Displays the music library with folders and tracks
+3. `TrackInfo.tsx` - Shows information about the currently playing track
+4. `VolumeControl.tsx` - Volume adjustment interface
+
+## Adding Music Files
+
+To add new music, place your audio files in the `/public/music/` directory, then update the `sampleTracks.ts` file in the `/src/data/` directory to include information about your tracks.
+
+The music library is organized as a nested structure of folders and tracks. Each folder can contain both tracks and other folders.
+
+Example:
+
+```typescript
+export const musicLibrary = [
+  {
+    id: "folder1",
+    name: "Classical Music",
+    tracks: [
+      {
+        id: "track1",
+        title: "Moonlight Sonata",
+        artist: "Ludwig van Beethoven",
+        album: "Piano Sonatas",
+        cover: "/images/moonlight.jpg",
+        url: "/music/moonlight-sonata.mp3"
+      }
+    ],
+    folders: [
+      {
+        id: "subfolder1",
+        name: "Mozart",
+        tracks: [...],
+        folders: []
+      }
+    ]
+  }
+];
+```
+
+## Dark Mode Implementation
+
+The application uses a custom hook (`useTheme.tsx`) to manage theme preferences. The theme is stored in localStorage and also respects the user's system preferences when first loaded.
+
+## State Management
+
+The app uses React's built-in state management with `useState` and `useEffect` for most functionality. For more complex applications, consider integrating React Query for data fetching or Redux for global state management.
+
+## Custom Styling
+
+The project uses Tailwind CSS for styling. Dark mode is implemented via the `dark:` modifier classes. Custom animations are defined in the CSS and can be used via utility classes.
+
+## Extending the Menu
+
+To add new menu items:
+
+1. Open `src/pages/Index.tsx`
+2. Find the menu section in the `Drawer` component
+3. Add your new menu items following the existing pattern
+
+## Project Customization
+
+- **Color Scheme**: Update the Tailwind theme in `tailwind.config.ts`
+- **Logo**: Replace the `BookAudio` icon with your own logo
+- **Branding**: Change app name, footer text, and other branding elements in `Index.tsx`
+
+## Deployment
+
+To deploy the application:
+
+1. Run `npm run build` or `yarn build`
+2. Deploy the contents of the `dist` directory to your web hosting provider
+
+For continuous deployment, consider setting up a GitHub Actions workflow that builds and deploys the application when changes are pushed to the main branch.
+
+## Performance Considerations
+
+- Optimize audio files (use appropriate formats and bitrates)
+- Compress images for faster loading
+- Consider lazy loading for playlist items when the library grows large
