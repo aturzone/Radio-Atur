@@ -3,7 +3,7 @@
 
 A calm, relaxing music player web app inspired by the ambiance of cozy bookshops. Perfect for creating a pleasant atmosphere while reading, working, or relaxing.
 
-<img src="RADIO-ATUR.png" alt="Cozy Audio Café Screenshot" width="500"/>
+<img src="RADIO-ATUR.png" alt="Cozy Audio Café Screenshot" width="650"/>
 
 ## Features
 
