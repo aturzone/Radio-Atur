@@ -26,7 +26,7 @@ A calm, relaxing music player web app inspired by the ambiance of cozy bookshops
 ## 📥 Installation
 
 ### Web Version
-Use the online version directly at: [https://cozy-audio-cafe.lovable.app/](https://cozy-audio-cafe.lovable.app/)
+SOON...
 
 ### Android
 1. Download the `.apk` file from the `/installers` directory
