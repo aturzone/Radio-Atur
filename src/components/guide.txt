@@ -1,0 +1,47 @@
+
+# Components Directory
+
+This directory contains reusable UI components used throughout the application.
+
+## Core Components
+
+- `MusicPlayer.tsx` - Main music player component
+- `PlaylistFolder.tsx` - Folder component for playlist organization
+- `PlaylistView.tsx` - List view of tracks in a playlist
+- `RadioPlayer.tsx` - Radio stream player component
+- `TrackInfo.tsx` - Displays current track information
+- `VolumeControl.tsx` - Audio volume control component
+- `GoogleDriveConnect.tsx` - Google Drive connection interface
+
+## UI Components
+
+The `ui` subdirectory contains shadcn/ui components:
+- Buttons, inputs, dialogs, and other UI elements
+- These follow a consistent design language
+- Components are built with accessibility in mind
+
+## Player Components
+
+The `player` subdirectory contains specialized music player components:
+- `AudioPlayer.tsx` - Core audio playback logic
+- `PlayerControls.tsx` - Play/pause/skip controls
+- `ProgressBar.tsx` - Track progress display
+- `NavigationButtons.tsx` - Navigation UI elements
+
+## Component Design Principles
+
+1. **Reusability**: Components should be designed for reuse throughout the application
+2. **Single Responsibility**: Each component should do one thing well
+3. **Prop Documentation**: All component props should be well-documented with TypeScript
+4. **Accessibility**: Components should follow WCAG guidelines
+5. **Responsive Design**: Components should work well on all screen sizes
+
+## Creating New Components
+
+When creating new components:
+
+1. Use TypeScript for type safety
+2. Include proper prop validation
+3. Keep components focused and small
+4. Use composition over inheritance
+5. Include documentation comments

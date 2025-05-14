@@ -1,0 +1,35 @@
+
+# Google Integration Utility Functions
+
+This directory contains utility functions for integrating with Google services,
+particularly Gmail authentication and Google Drive sync.
+
+## Key Features
+
+1. Gmail Login Authentication
+   - Users can log in with their Google account
+   - OAuth 2.0 authentication flow
+
+2. Google Drive Sync
+   - Sync music library to Google Drive
+   - Create full backups with timestamps
+   - Restore from backups
+
+## Main Files
+
+- `googleIntegration.ts`: Core functionality for Google API integration
+- `fileSystem.ts`: File system utilities for music scanning and organization
+
+## Implementation Details
+
+The Google integration uses:
+- Google Drive API for file storage
+- Gmail API for authentication and user profile
+- Google Identity Services for OAuth flow
+
+## Best Practices
+
+- Always handle authentication errors gracefully
+- Use proper error logging and user feedback
+- Store sensitive information securely
+- Respect user data privacy

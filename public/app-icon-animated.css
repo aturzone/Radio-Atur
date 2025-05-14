@@ -1,0 +1,82 @@
+
+/* Animation for the radio waves */
+.wave {
+  opacity: 0;
+  transform-origin: center;
+  animation: pulse 3s infinite;
+}
+
+.wave1 {
+  animation-delay: 0s;
+}
+
+.wave2 {
+  animation-delay: 1s;
+}
+
+.wave3 {
+  animation-delay: 2s;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  
+  50% {
+    opacity: 0.8;
+  }
+  
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Antenna gentle bounce */
+.antenna, .antenna-top {
+  animation: bounce 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Radio tuner gentle rotation */
+.tuner, .tuner-inner, .tuner-center {
+  animation: rotate 8s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Base color pulsing */
+.base {
+  animation: colorPulse 8s ease infinite;
+}
+
+@keyframes colorPulse {
+  0%, 100% {
+    fill: #6c4a4a;
+  }
+  
+  50% {
+    fill: #8b5d5d;
+  }
+}

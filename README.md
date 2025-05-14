@@ -1,95 +1,131 @@
 
 # Cozy Audio Café
 
-A calm, relaxing music player web app inspired by the ambiance of cozy bookshops. Perfect for creating a pleasant atmosphere while reading, working, or relaxing.
+<p align="center">
+  <img src="/public/app-icon-animated.gif" alt="Cozy Audio Café Logo" width="128" height="128" />
+</p>
 
-<img src="RADIO-ATUR.png" alt="Cozy Audio Café Screenshot" width="500"/>
+A calm, relaxing music player web app inspired by the ambiance of cozy bookshops. Perfect for creating a pleasant atmosphere while reading, working, or relaxing. Now available for multiple platforms including web, Android, Windows, and Linux.
 
-## Features
+## ✨ Features
 
 - 🎵 Clean, minimalist music player interface
+- 📱 Cross-platform support (Web, Android, Windows, Linux)
 - 📁 Folder-based playlist organization
 - 🌓 Dark/Light mode toggle
-- 📱 Fully responsive design
+- 🎨 Multiple theme options
+- 📋 Song management (add, delete, edit)
+- 🔄 Google Drive sync and backup
+- 🔍 System scan for audio files
+- 📊 Track visualization
+- 📻 Radio streaming
+- 🔊 Volume and playback controls
+- 💾 Import/export backup functionality
 - ☕ "Buy Me a Coffee" support link
-- 🎨 Soothing coffee-inspired color scheme
 
-## Getting Started
+## 📥 Installation
+
+### Web Version
+Use the online version directly at: [https://cozy-audio-cafe.lovable.app/](https://cozy-audio-cafe.lovable.app/)
+
+### Android
+1. Download the `.apk` file from the `/installers` directory
+2. Enable "Install from Unknown Sources" in your Android settings
+3. Open the downloaded APK file to install
+4. Launch from your app drawer
+
+### Windows
+1. Download the `.exe` installer from the `/installers` directory
+2. Run the installer and follow the on-screen instructions
+3. Launch from desktop shortcut or start menu
+
+### Linux (Debian-based)
+1. Download the `.deb` package from the `/installers` directory
+2. Install using:
+   ```bash
+   sudo dpkg -i cozy-audio-cafe.deb
+   sudo apt-get install -f  # To resolve dependencies
+   ```
+3. Launch from your applications menu
+
+## 🎧 Using Cozy Audio Café
+
+### Basic Usage
+1. Launch the app
+2. The player will automatically scan for music on first launch
+3. Use the folder browser to navigate your music collection
+4. Click on any track to start playing
+
+### Google Drive Sync
+1. Click on the "Login with Gmail" button
+2. Allow the requested permissions
+3. Use "Sync with Drive" to sync your library to Google Drive
+4. Use "Backup All" to create a complete backup
+
+### Importing a Backup
+1. Go to Settings
+2. Click "Import Backup"
+3. Select your backup file or folder
+4. Wait for the restoration to complete
+
+## 🔄 Syncing Between Devices
+
+1. Create a backup on your source device using "Backup All"
+2. Transfer the backup to your target device
+3. Use "Import Backup" on the target device
+4. Alternatively, use Google Drive sync on both devices
+
+## 📷 Screenshots
+
+![Player Interface](https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400)
+![Playlist View](https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400)
+
+## 🛠️ Development
 
 ### Prerequisites
-
-- Node.js (v14.0 or higher recommended)
+- Node.js (v14.0 or higher)
 - npm or yarn
 
-### Installation
-
-1. Clone the repository:
+### Building from Source
 ```bash
+# Clone the repository
 git clone https://github.com/yourusername/cozy-audio-cafe.git
 cd cozy-audio-cafe
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-# or
-yarn install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm run dev
-# or
-yarn dev
-```
 
-The app will be available at http://localhost:5173/
-
-## Adding Your Own Music
-
-To add your own music to the player:
-
-1. Place your audio files in the `public/music` directory
-2. Update the track information in `src/data/sampleTracks.ts`
-
-Example track format:
-```typescript
-{
-  id: "unique-id",
-  title: "Track Title",
-  artist: "Artist Name",
-  album: "Album Name",
-  cover: "/path/to/cover-image.jpg",
-  url: "/music/your-audio-file.mp3"
-}
-```
-
-## Deployment
-
-Build the application for production:
-
-```bash
+# Build for production
 npm run build
-# or
-yarn build
 ```
 
-The built files will be in the `dist` directory, ready to be deployed to any static web hosting service.
+## 📱 Building Mobile App
+```bash
+# Build for Android
+npm run build
+npx cap sync android
+npx cap open android
 
-## Contributing
+# Build for iOS (macOS only)
+npm run build
+npx cap sync ios
+npx cap open ios
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
+## 📃 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Support
+## 💖 Support
 
 If you enjoy using Cozy Audio Café, consider supporting the project by clicking the "Buy Me a Coffee" button in the app.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Background music samples by [Sample Provider]
+- Music samples by various artists
 - UI components powered by Shadcn UI
 - Icons by Lucide React
+- Cross-platform capabilities by Capacitor

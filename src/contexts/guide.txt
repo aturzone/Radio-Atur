@@ -1,0 +1,48 @@
+
+# Contexts Directory
+
+This directory contains React context providers used for state management across the application.
+
+## Files
+
+- `GoogleIntegrationContext.tsx` - Manages Google Drive integration state
+- `PlaylistContext.tsx` - Manages music library and playlist state
+
+## Google Integration Context
+
+The `GoogleIntegrationContext` provides:
+- Connection status to Google services
+- User profile information
+- Methods for connecting/disconnecting
+- Backup and restore functionality
+
+## Playlist Context
+
+The `PlaylistContext` provides:
+- Current playlist and track information
+- Methods for managing playlists
+- Track selection and playback control
+- Library management functions
+
+## Usage
+
+Import and use these contexts in components that need access to shared state.
+
+Example:
+
+```tsx
+import { useGoogleIntegration } from '../contexts/GoogleIntegrationContext';
+
+const MyComponent = () => {
+  const { isConnected, connect } = useGoogleIntegration();
+  return <button onClick={connect}>{isConnected ? 'Connected' : 'Connect'}</button>;
+};
+```
+
+## Context Implementation Guidelines
+
+1. Provide clear typing for context values
+2. Include a custom hook for consuming the context
+3. Add proper error handling for context operations
+4. Keep related state and functions together
+5. Use memoization for complex derived values

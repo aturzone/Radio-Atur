@@ -1,46 +1,58 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Folder, Track, musicLibrary } from '../data/sampleTracks';
-import { toast } from 'sonner';
-import * as fileSystem from '../utils/fileSystem';
 
-interface PlaylistContextType {
+import { createContext, useContext, useState, useEffect } from 'react';
+import { Folder, Track, sampleLibrary } from '../data/sampleTracks';
+
+export interface PlaylistContextType {
   library: Folder[];
   expandedFolders: string[];
-  currentTrackId: string | null;
-  draggedItem: {
-    type: 'track' | 'folder' | null;
-    id: string | null;
-    sourceFolderId: string | null;
-  };
-  isScanning: boolean;
-  setLibrary: React.Dispatch<React.SetStateAction<Folder[]>>;
   toggleFolder: (folderId: string) => void;
-  selectTrack: (track: Track) => void;
-  scanForMusic: (customFiles?: File[]) => Promise<void>;
-  createNewFolder: (parentFolderId: string, name: string) => void;
-  deleteFolder: (folderId: string) => void;
-  renameFolder: (folderId: string, newName: string) => void;
-  setDraggedItem: (type: 'track' | 'folder' | null, id: string | null, sourceFolderId: string | null) => void;
+  draggedItem: {
+    id: string;
+    type: 'folder' | 'track' | '';
+    parentId: string;
+  };
+  setDraggedItem: (type: 'folder' | 'track' | '', id: string, parentId: string) => void;
   handleDrop: (targetFolderId: string) => void;
-  addToFavorites: (track: Track) => void;
+  createNewFolder: (parentFolderId: string, folderName: string) => void;
+  renameFolder: (folderId: string, newName: string) => void;
+  deleteFolder: (folderId: string) => void;
+  selectTrack: (track: Track) => void;
+  addTrack: (track: Track, folderId: string) => void;
+  removeTrack: (trackId: string, folderId: string) => void;
+  moveTrack: (trackId: string, sourceFolderId: string, targetFolderId: string) => void;
+  addToFavorites: (trackId: string) => void;
   isTrackInFavorites: (trackId: string) => boolean;
+  isScanning: boolean;
+  scanForMusic: () => Promise<void>;
+  setLibrary: (newLibrary: Folder[]) => void;
+  importPlaylists: (playlists: Folder[]) => void;
+  updateTrack: (trackId: string, updatedTrack: Partial<Track>) => void;
+  findTrackById: (trackId: string) => Track | null;
 }
 
 const PlaylistContext = createContext<PlaylistContextType | undefined>(undefined);
 
-export const PlaylistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [library, setLibrary] = useState<Folder[]>(musicLibrary);
-  const [expandedFolders, setExpandedFolders] = useState<string[]>(['Chill-lofi']);
-  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
+export const usePlaylist = () => {
+  const context = useContext(PlaylistContext);
+  if (!context) {
+    throw new Error('usePlaylist must be used within a PlaylistProvider');
+  }
+  return context;
+};
+
+const PlaylistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [library, setLibrary] = useState<Folder[]>(sampleLibrary);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>(['device-root', 'Chill-lofi']);
   const [isScanning, setIsScanning] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [draggedItem, setDraggedItemState] = useState<{
-    type: 'track' | 'folder' | null;
-    id: string | null;
-    sourceFolderId: string | null;
+    id: string;
+    type: 'folder' | 'track' | '';
+    parentId: string;
   }>({
-    type: null,
-    id: null,
-    sourceFolderId: null,
+    id: '',
+    type: '',
+    parentId: ''
   });
 
   // Load library from localStorage on mount
@@ -48,533 +60,388 @@ export const PlaylistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const savedLibrary = localStorage.getItem('musicLibrary');
     if (savedLibrary) {
       try {
-        setLibrary(JSON.parse(savedLibrary));
-      } catch (err) {
-        console.error('Failed to parse saved library:', err);
+        const parsedLibrary = JSON.parse(savedLibrary);
+        setLibrary(parsedLibrary);
+      } catch (error) {
+        console.error('Failed to parse saved library:', error);
       }
-    } else {
-      // If no saved library, ensure we have a Favorites folder
-      ensureFavoritesFolder();
+    }
+    
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      try {
+        setFavorites(JSON.parse(savedFavorites));
+      } catch (error) {
+        console.error('Failed to parse saved favorites:', error);
+      }
     }
   }, []);
 
-  // Ensure radio folders are created
-  useEffect(() => {
-    ensureRadioFolders();
-  }, []);
-
-  // Save library to localStorage when it changes
+  // Save library to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('musicLibrary', JSON.stringify(library));
   }, [library]);
+  
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
-  // Make sure the Favorites folder exists
-  const ensureFavoritesFolder = () => {
-    const favoritesFolderId = 'favorites-folder';
-    const hasFavoritesFolder = library.some(folder => folder.id === favoritesFolderId);
-
-    if (!hasFavoritesFolder) {
-      setLibrary(prev => [
-        ...prev,
-        {
-          id: favoritesFolderId,
-          name: "Favorites Playlist",
-          tracks: [],
-          folders: []
-        }
-      ]);
-    }
-  };
-
-  // Make sure radio station folders exist
-  const ensureRadioFolders = () => {
-    // Import radio data asynchronously to avoid circular dependencies
-    import('../data/sampleTracks').then(({ radioChannels }) => {
-      const radioFolderId = 'radio-stations-folder';
-      let hasRadioFolder = false;
-      let radioFolder = null;
-
-      // Check if radio stations folder already exists
-      for (const folder of library) {
-        if (folder.id === radioFolderId) {
-          hasRadioFolder = true;
-          radioFolder = folder;
-          break;
-        }
-      }
-
-      // If radio folder doesn't exist, create it
-      if (!hasRadioFolder) {
-        radioFolder = {
-          id: radioFolderId,
-          name: "Radio Stations",
-          tracks: [],
-          folders: []
-        };
-
-        setLibrary(prev => [...prev, radioFolder]);
-      }
-
-      // Create folders for each radio station if they don't exist
-      const updatedLibrary = [...library];
-      const radioFolderIndex = updatedLibrary.findIndex(f => f.id === radioFolderId);
-
-      if (radioFolderIndex !== -1) {
-        const stationFolders = radioChannels.map(channel => {
-          // Check if this station folder already exists
-          const existingFolder = updatedLibrary[radioFolderIndex].folders.find(
-            f => f.name === channel.name
-          );
-
-          if (existingFolder) {
-            return existingFolder;
-          }
-
-          // Create new folder for this station
-          return {
-            id: `radio-station-${channel.id}`,
-            name: channel.name,
-            description: channel.description,
-            cover: channel.cover,
-            tracks: [...channel.tracks],
-            folders: [],
-            parent: radioFolderId
-          };
-        });
-
-        // Update the radio folder with all station folders
-        updatedLibrary[radioFolderIndex] = {
-          ...updatedLibrary[radioFolderIndex],
-          folders: stationFolders
-        };
-
-        setLibrary(updatedLibrary);
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders(prev => {
+      if (prev.includes(folderId)) {
+        return prev.filter(id => id !== folderId);
+      } else {
+        return [...prev, folderId];
       }
     });
   };
 
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders(prev => 
-      prev.includes(folderId)
-        ? prev.filter(id => id !== folderId)
-        : [...prev, folderId]
-    );
+  const setDraggedItem = (type: 'folder' | 'track' | '', id: string, parentId: string) => {
+    setDraggedItemState({ type, id, parentId });
   };
 
+  // Helper function to find a folder by ID
+  const findFolder = (folders: Folder[], id: string): Folder | null => {
+    for (const folder of folders) {
+      if (folder.id === id) {
+        return folder;
+      }
+      
+      const foundInSubfolders = findFolder(folder.folders, id);
+      if (foundInSubfolders) {
+        return foundInSubfolders;
+      }
+    }
+    
+    return null;
+  };
+
+  // Helper function to find a folder's parent
+  const findFolderParent = (folders: Folder[], id: string, parent: Folder | null = null): Folder | null => {
+    for (const folder of folders) {
+      if (folder.id === id) {
+        return parent;
+      }
+      
+      const foundInSubfolders = findFolderParent(folder.folders, id, folder);
+      if (foundInSubfolders) {
+        return foundInSubfolders;
+      }
+    }
+    
+    return null;
+  };
+
+  // Helper function to find a track by ID
+  const findTrack = (folders: Folder[], id: string): { track: Track, folder: Folder } | null => {
+    for (const folder of folders) {
+      const track = folder.tracks.find(t => t.id === id);
+      if (track) {
+        return { track, folder };
+      }
+      
+      const foundInSubfolders = findTrack(folder.folders, id);
+      if (foundInSubfolders) {
+        return foundInSubfolders;
+      }
+    }
+    
+    return null;
+  };
+
+  // Find a track by ID and return it
+  const findTrackById = (trackId: string): Track | null => {
+    const result = findTrack(library, trackId);
+    return result ? result.track : null;
+  };
+
+  // Handle dropping a dragged item into a target folder
+  const handleDrop = (targetFolderId: string) => {
+    if (!draggedItem.id || !draggedItem.type) return;
+    
+    // Don't do anything if dropping onto the same folder
+    if (draggedItem.parentId === targetFolderId) return;
+    
+    const newLibrary = [...library];
+    
+    if (draggedItem.type === 'folder') {
+      // Find the folder to move
+      const folderToMove = findFolder(newLibrary, draggedItem.id);
+      if (!folderToMove) return;
+      
+      // Find the parent folder to remove it from
+      const sourceParent = findFolderParent(newLibrary, draggedItem.id);
+      
+      // Find the target folder to add it to
+      const targetFolder = findFolder(newLibrary, targetFolderId);
+      if (!targetFolder) return;
+      
+      // Remove the folder from its current parent
+      if (sourceParent) {
+        sourceParent.folders = sourceParent.folders.filter(f => f.id !== draggedItem.id);
+      } else {
+        // It's a top-level folder
+        setLibrary(newLibrary.filter(f => f.id !== draggedItem.id));
+      }
+      
+      // Update the folder's parent reference
+      folderToMove.parent = targetFolder.id;
+      
+      // Add the folder to the target folder
+      targetFolder.folders.push(folderToMove);
+      
+      setLibrary(newLibrary);
+    } else if (draggedItem.type === 'track') {
+      // Find the track to move
+      const result = findTrack(newLibrary, draggedItem.id);
+      if (!result) return;
+      
+      const { track, folder: sourceFolder } = result;
+      
+      // Find the target folder
+      const targetFolder = findFolder(newLibrary, targetFolderId);
+      if (!targetFolder) return;
+      
+      // Remove the track from its current folder
+      sourceFolder.tracks = sourceFolder.tracks.filter(t => t.id !== draggedItem.id);
+      
+      // Add the track to the target folder
+      targetFolder.tracks.push(track);
+      
+      setLibrary(newLibrary);
+    }
+    
+    // Reset the dragged item
+    setDraggedItem('', '', '');
+  };
+
+  // Create a new folder
+  const createNewFolder = (parentFolderId: string, folderName: string) => {
+    const newFolder: Folder = {
+      id: `folder-${Date.now()}`,
+      name: folderName,
+      tracks: [],
+      folders: [],
+      parent: parentFolderId
+    };
+    
+    const newLibrary = [...library];
+    
+    if (parentFolderId === 'root') {
+      // Add as a top-level folder
+      newLibrary.push(newFolder);
+    } else {
+      // Find the parent folder and add the new folder to it
+      const parentFolder = findFolder(newLibrary, parentFolderId);
+      if (parentFolder) {
+        parentFolder.folders.push(newFolder);
+      }
+    }
+    
+    setLibrary(newLibrary);
+  };
+
+  // Rename a folder
+  const renameFolder = (folderId: string, newName: string) => {
+    const newLibrary = [...library];
+    const folder = findFolder(newLibrary, folderId);
+    
+    if (folder) {
+      folder.name = newName;
+      setLibrary(newLibrary);
+    }
+  };
+
+  // Delete a folder
+  const deleteFolder = (folderId: string) => {
+    const newLibrary = [...library];
+    
+    // Find the parent folder
+    const parentFolder = findFolderParent(newLibrary, folderId);
+    
+    if (parentFolder) {
+      // Remove the folder from its parent
+      parentFolder.folders = parentFolder.folders.filter(f => f.id !== folderId);
+      setLibrary(newLibrary);
+    } else {
+      // It's a top-level folder
+      setLibrary(newLibrary.filter(f => f.id !== folderId));
+    }
+  };
+
+  // Select a track (for playing)
   const selectTrack = (track: Track) => {
-    setCurrentTrackId(track.id);
+    // This function doesn't modify the library, but it's included in the context
+    // for consistency. In a real app, you might want to update a "currentTrack" state.
+    console.log('Selected track:', track.title);
+  };
+
+  // Add a track to a folder
+  const addTrack = (track: Track, folderId: string) => {
+    const newLibrary = [...library];
+    const folder = findFolder(newLibrary, folderId);
+    
+    if (folder) {
+      folder.tracks.push(track);
+      setLibrary(newLibrary);
+    }
+  };
+
+  // Remove a track from a folder
+  const removeTrack = (trackId: string, folderId: string) => {
+    const newLibrary = [...library];
+    const folder = findFolder(newLibrary, folderId);
+    
+    if (folder) {
+      folder.tracks = folder.tracks.filter(t => t.id !== trackId);
+      setLibrary(newLibrary);
+    }
+  };
+
+  // Move a track from one folder to another
+  const moveTrack = (trackId: string, sourceFolderId: string, targetFolderId: string) => {
+    const newLibrary = [...library];
+    const sourceFolder = findFolder(newLibrary, sourceFolderId);
+    const targetFolder = findFolder(newLibrary, targetFolderId);
+    
+    if (sourceFolder && targetFolder) {
+      const track = sourceFolder.tracks.find(t => t.id === trackId);
+      if (track) {
+        sourceFolder.tracks = sourceFolder.tracks.filter(t => t.id !== trackId);
+        targetFolder.tracks.push(track);
+        setLibrary(newLibrary);
+      }
+    }
   };
 
   // Add a track to favorites
-  const addToFavorites = (track: Track) => {
-    const favoritesFolderId = 'favorites-folder';
-    
-    // Make sure we have a favorites folder
-    ensureFavoritesFolder();
-    
-    // Find the favorites folder
-    const favoritesIndex = library.findIndex(folder => folder.id === favoritesFolderId);
-    
-    if (favoritesIndex === -1) {
-      console.error("Favorites folder not found");
-      return;
-    }
-    
-    // Check if track is already in favorites
-    const isAlreadyFavorite = library[favoritesIndex].tracks.some(t => t.id === track.id);
-    
-    if (isAlreadyFavorite) {
-      // Remove from favorites
-      const updatedLibrary = [...library];
-      updatedLibrary[favoritesIndex] = {
-        ...updatedLibrary[favoritesIndex],
-        tracks: updatedLibrary[favoritesIndex].tracks.filter(t => t.id !== track.id)
-      };
-      
-      setLibrary(updatedLibrary);
-      toast.success(`Removed "${track.title}" from favorites`);
+  const addToFavorites = (trackId: string) => {
+    if (favorites.includes(trackId)) {
+      setFavorites(favorites.filter(id => id !== trackId));
     } else {
-      // Add to favorites
-      const updatedLibrary = [...library];
-      updatedLibrary[favoritesIndex] = {
-        ...updatedLibrary[favoritesIndex],
-        tracks: [...updatedLibrary[favoritesIndex].tracks, track]
-      };
-      
-      setLibrary(updatedLibrary);
-      toast.success(`Added "${track.title}" to favorites`);
+      setFavorites([...favorites, trackId]);
     }
-  };
-  
-  // Check if a track is in favorites
-  const isTrackInFavorites = (trackId: string) => {
-    const favoritesFolderId = 'favorites-folder';
-    const favoritesFolder = library.find(folder => folder.id === favoritesFolderId);
-    
-    if (!favoritesFolder) return false;
-    
-    return favoritesFolder.tracks.some(track => track.id === trackId);
   };
 
-  const scanForMusic = async (customFiles?: File[]) => {
-    try {
-      setIsScanning(true);
-      
-      // Use provided files or create file input for selecting files/folders
-      let files: File[];
-      
-      if (customFiles && customFiles.length > 0) {
-        files = customFiles;
-      } else {
-        // Create file input for selecting files/folders
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.webkitdirectory = true;
-        input.multiple = true;
+  // Check if a track is in favorites
+  const isTrackInFavorites = (trackId: string) => {
+    return favorites.includes(trackId);
+  };
+
+  // Import playlists (new function)
+  const importPlaylists = (playlists: Folder[]) => {
+    setLibrary((currentLibrary) => {
+      return [...currentLibrary, ...playlists];
+    });
+  };
+
+  // Update a track's metadata
+  const updateTrack = (trackId: string, updatedFields: Partial<Track>) => {
+    const newLibrary = [...library];
+    
+    const updateTrackInFolders = (folders: Folder[]): boolean => {
+      for (const folder of folders) {
+        const trackIndex = folder.tracks.findIndex(t => t.id === trackId);
         
-        // Handle file selection
-        const filePromise = new Promise<File[]>((resolve) => {
-          input.onchange = (event) => {
-            const files = Array.from((event.target as HTMLInputElement).files || []);
-            resolve(files);
+        if (trackIndex !== -1) {
+          folder.tracks[trackIndex] = {
+            ...folder.tracks[trackIndex],
+            ...updatedFields
           };
-        });
+          return true;
+        }
         
-        // Trigger file selection
-        input.click();
-        
-        // Wait for user to select files
-        files = await filePromise;
-        
-        if (files.length === 0) {
-          toast.info("No files selected");
-          setIsScanning(false);
-          return;
+        if (updateTrackInFolders(folder.folders)) {
+          return true;
         }
       }
       
-      toast.info(`Processing ${files.length} files...`);
+      return false;
+    };
+    
+    if (updateTrackInFolders(newLibrary)) {
+      setLibrary(newLibrary);
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Scan for music files (enhanced implementation)
+  const scanForMusic = async () => {
+    setIsScanning(true);
+    
+    try {
+      // In a real app, this would use the Electron API or Web File System API to scan the file system
+      // For now, we'll just simulate a delay and add some mock tracks
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Create folder structure
-      let deviceFolder = library.find(folder => folder.id === 'device-root');
+      const newLibrary = [...library];
+      const deviceFolder = findFolder(newLibrary, 'device-root');
       
-      if (!deviceFolder) {
-        deviceFolder = {
-          id: 'device-root',
-          name: 'Your Device',
-          tracks: [],
-          folders: []
-        };
+      if (deviceFolder) {
+        // Add some mock scanned tracks
+        const mockAudioFormats = ["mp3", "wav", "flac", "aac", "ogg"];
+        const mockArtists = ["Unknown Artist", "Local Band", "Demo Artist", "Recorded Audio"];
+        const mockAlbums = ["Unknown Album", "Local Recording", "Demo Album", "Voice Notes"];
         
-        setLibrary(prev => [...prev, deviceFolder!]);
-        setExpandedFolders(prev => [...prev, 'device-root']);
-      }
-      
-      // Process audio files and update folder
-      const updatedFolder = await fileSystem.processAudioFiles(files, deviceFolder);
-      
-      // Update library with new device folder
-      setLibrary(prev => {
-        const index = prev.findIndex(folder => folder.id === 'device-root');
-        if (index !== -1) {
-          return [
-            ...prev.slice(0, index),
-            updatedFolder,
-            ...prev.slice(index + 1)
-          ];
-        } else {
-          return [...prev, updatedFolder];
+        for (let i = 1; i <= 8; i++) {
+          const format = mockAudioFormats[Math.floor(Math.random() * mockAudioFormats.length)];
+          const artist = mockArtists[Math.floor(Math.random() * mockArtists.length)];
+          const album = mockAlbums[Math.floor(Math.random() * mockAlbums.length)];
+          const fileName = `Discovered Track ${Date.now()}-${i}`;
+          const duration = `${Math.floor(Math.random() * 5) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+          
+          const newTrack: Track = {
+            id: `track-${Date.now()}-${i}`,
+            title: fileName,
+            artist: artist,
+            album: album,
+            cover: `https://source.unsplash.com/random/300x300?music&sig=${Date.now()}-${i}`,
+            url: `/mock-path/music/${fileName}.${format}`,
+            duration: duration
+          };
+          
+          deviceFolder.tracks.push(newTrack);
         }
-      });
-      
-      toast.success(`Added ${files.filter(f => f.type.startsWith('audio/')).length} audio files`);
+        
+        setLibrary(newLibrary);
+      }
     } catch (error) {
       console.error('Error scanning for music:', error);
-      toast.error('Failed to scan for music');
     } finally {
       setIsScanning(false);
     }
   };
 
-  const createNewFolder = (parentFolderId: string, name: string) => {
-    if (!name.trim()) {
-      toast.error('Folder name cannot be empty');
-      return;
-    }
-    
-    // Find the parent folder and add the new folder
-    const updateFolderInLibrary = (folders: Folder[]): Folder[] => {
-      return folders.map(folder => {
-        if (folder.id === parentFolderId) {
-          // Create new folder
-          const newFolder: Folder = {
-            id: crypto.randomUUID(),
-            name: name.trim(),
-            tracks: [],
-            folders: [],
-            parent: folder.id
-          };
-          
-          // Add to parent
-          return {
-            ...folder,
-            folders: [...folder.folders, newFolder]
-          };
-        }
-        
-        // Check subfolders
-        return {
-          ...folder,
-          folders: updateFolderInLibrary(folder.folders)
-        };
-      });
-    };
-    
-    setLibrary(updateFolderInLibrary);
-    toast.success(`Created folder "${name}"`);
-  };
-
-  const deleteFolder = (folderId: string) => {
-    // Recursive function to find and delete folder
-    const updateFolderInLibrary = (folders: Folder[]): Folder[] => {
-      // Check if folder is in this level
-      const folderIndex = folders.findIndex(folder => folder.id === folderId);
-      if (folderIndex !== -1) {
-        return [
-          ...folders.slice(0, folderIndex),
-          ...folders.slice(folderIndex + 1)
-        ];
-      }
-      
-      // Check subfolders
-      return folders.map(folder => ({
-        ...folder,
-        folders: updateFolderInLibrary(folder.folders)
-      }));
-    };
-    
-    setLibrary(updateFolderInLibrary);
-    
-    // Remove from expanded folders if present
-    setExpandedFolders(prev => prev.filter(id => id !== folderId));
-    
-    toast.success('Folder deleted');
-  };
-
-  const renameFolder = (folderId: string, newName: string) => {
-    if (!newName.trim()) {
-      toast.error('Folder name cannot be empty');
-      return;
-    }
-    
-    // Find folder and rename it
-    const updateFolderName = (folders: Folder[]): Folder[] => {
-      return folders.map(folder => {
-        if (folder.id === folderId) {
-          return {
-            ...folder,
-            name: newName.trim()
-          };
-        }
-        
-        return {
-          ...folder,
-          folders: updateFolderName(folder.folders)
-        };
-      });
-    };
-    
-    setLibrary(updateFolderName);
-    toast.success(`Renamed folder to "${newName}"`);
-  };
-
-  const setDraggedItem = (
-    type: 'track' | 'folder' | null, 
-    id: string | null,
-    sourceFolderId: string | null
-  ) => {
-    setDraggedItemState({ type, id, sourceFolderId });
-  };
-
-  const handleDrop = (targetFolderId: string) => {
-    if (!draggedItem.id || !draggedItem.sourceFolderId || draggedItem.sourceFolderId === targetFolderId) {
-      return;
-    }
-    
-    // Prevent moving a folder into itself or its descendants
-    if (draggedItem.type === 'folder') {
-      const isTargetDescendant = (folderId: string, targetId: string): boolean => {
-        if (folderId === targetId) return true;
-        
-        // Find the target folder
-        const findFolder = (folders: Folder[]): Folder | undefined => {
-          for (const folder of folders) {
-            if (folder.id === targetId) return folder;
-            
-            const found = findFolder(folder.folders);
-            if (found) return found;
-          }
-          return undefined;
-        };
-        
-        const targetFolder = findFolder(library);
-        
-        if (!targetFolder) return false;
-        
-        // Check if target is a descendant of the folder being moved
-        return isTargetDescendant(folderId, targetFolder.parent || '');
-      };
-      
-      if (isTargetDescendant(draggedItem.id, targetFolderId)) {
-        toast.error("Cannot move a folder into itself or its subfolders");
-        setDraggedItemState({ type: null, id: null, sourceFolderId: null });
-        return;
-      }
-    }
-    
-    // Handle the drop based on item type
-    if (draggedItem.type === 'track') {
-      // Move track
-      const updateLibrary = (folders: Folder[]): Folder[] => {
-        let trackToMove: Track | null = null;
-        
-        // Remove from source
-        const removeFromSource = (folders: Folder[]): Folder[] => {
-          return folders.map(folder => {
-            if (folder.id === draggedItem.sourceFolderId) {
-              const trackIndex = folder.tracks.findIndex(t => t.id === draggedItem.id);
-              if (trackIndex !== -1) {
-                trackToMove = folder.tracks[trackIndex];
-                return {
-                  ...folder,
-                  tracks: [
-                    ...folder.tracks.slice(0, trackIndex),
-                    ...folder.tracks.slice(trackIndex + 1)
-                  ]
-                };
-              }
-            }
-            
-            return {
-              ...folder,
-              folders: removeFromSource(folder.folders)
-            };
-          });
-        };
-        
-        // Add to target
-        const addToTarget = (folders: Folder[]): Folder[] => {
-          return folders.map(folder => {
-            if (folder.id === targetFolderId && trackToMove) {
-              return {
-                ...folder,
-                tracks: [...folder.tracks, trackToMove]
-              };
-            }
-            
-            return {
-              ...folder,
-              folders: addToTarget(folder.folders)
-            };
-          });
-        };
-        
-        // Execute move
-        const updatedAfterRemove = removeFromSource(folders);
-        return trackToMove ? addToTarget(updatedAfterRemove) : updatedAfterRemove;
-      };
-      
-      setLibrary(updateLibrary);
-      toast.success('Track moved successfully');
-    } else if (draggedItem.type === 'folder') {
-      // Move folder
-      const updateLibrary = (folders: Folder[]): Folder[] => {
-        let folderToMove: Folder | null = null;
-        
-        // Remove from source
-        const removeFromSource = (folders: Folder[]): Folder[] => {
-          // Check if folder is in this level
-          const folderIndex = folders.findIndex(folder => folder.id === draggedItem.id);
-          if (folderIndex !== -1) {
-            folderToMove = folders[folderIndex];
-            return [
-              ...folders.slice(0, folderIndex),
-              ...folders.slice(folderIndex + 1)
-            ];
-          }
-          
-          // Check subfolders
-          return folders.map(folder => ({
-            ...folder,
-            folders: removeFromSource(folder.folders)
-          }));
-        };
-        
-        // Add to target
-        const addToTarget = (folders: Folder[]): Folder[] => {
-          return folders.map(folder => {
-            if (folder.id === targetFolderId && folderToMove) {
-              const updatedFolderToMove = {
-                ...folderToMove,
-                parent: folder.id
-              };
-              
-              return {
-                ...folder,
-                folders: [...folder.folders, updatedFolderToMove]
-              };
-            }
-            
-            return {
-              ...folder,
-              folders: addToTarget(folder.folders)
-            };
-          });
-        };
-        
-        // Execute move
-        const updatedAfterRemove = removeFromSource(folders);
-        return folderToMove ? addToTarget(updatedAfterRemove) : updatedAfterRemove;
-      };
-      
-      setLibrary(updateLibrary);
-      toast.success('Folder moved successfully');
-    }
-    
-    // Reset drag state
-    setDraggedItemState({ type: null, id: null, sourceFolderId: null });
-  };
-
-  const value = {
-    library,
-    expandedFolders,
-    currentTrackId,
-    draggedItem,
-    isScanning,
-    setLibrary,
-    toggleFolder,
-    selectTrack,
-    scanForMusic,
-    createNewFolder,
-    deleteFolder,
-    renameFolder,
-    setDraggedItem,
-    handleDrop,
-    addToFavorites,
-    isTrackInFavorites
-  };
-
   return (
-    <PlaylistContext.Provider value={value}>
+    <PlaylistContext.Provider value={{
+      library,
+      expandedFolders,
+      toggleFolder,
+      draggedItem,
+      setDraggedItem,
+      handleDrop,
+      createNewFolder,
+      renameFolder,
+      deleteFolder,
+      selectTrack,
+      addTrack,
+      removeTrack,
+      moveTrack,
+      addToFavorites,
+      isTrackInFavorites,
+      isScanning,
+      scanForMusic,
+      setLibrary,
+      importPlaylists,
+      updateTrack,
+      findTrackById,
+    }}>
       {children}
     </PlaylistContext.Provider>
   );
 };
 
-export const usePlaylist = () => {
-  const context = useContext(PlaylistContext);
-  if (context === undefined) {
-    throw new Error('usePlaylist must be used within a PlaylistProvider');
-  }
-  return context;
-};
+export { PlaylistProvider, PlaylistContext };

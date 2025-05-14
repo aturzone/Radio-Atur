@@ -239,6 +239,9 @@ export const musicLibrary: Folder[] = [
   }
 ];
 
+// Alias for backward compatibility
+export const sampleLibrary = musicLibrary;
+
 // Helper function to find a track by ID in the library
 export const findTrackById = (trackId: string): Track | null => {
   const searchInFolder = (folder: Folder): Track | null => {

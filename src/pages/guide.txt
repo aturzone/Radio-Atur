@@ -1,0 +1,48 @@
+
+# Pages Directory
+
+This directory contains top-level page components used in the application routing.
+
+## Files
+
+- `Index.tsx` - Home page with music player
+- `Radio.tsx` - Radio streaming page
+- `Settings.tsx` - Settings page
+- `NotFound.tsx` - 404 page
+
+## Home Page (Index.tsx)
+
+The main page of the application featuring:
+- Music player controls
+- Playlist management
+- Library browser
+
+## Radio Page (Radio.tsx)
+
+The radio streaming page featuring:
+- Radio station selection
+- Stream playback controls
+- Station favorites
+
+## Settings Page (Settings.tsx)
+
+The settings management page featuring:
+- Appearance settings (theme, colors)
+- Music library configuration
+- Google Drive integration
+- User feedback form
+
+## Page Structure
+
+Each page should:
+
+1. Have a clear, descriptive name
+2. Be responsible for layout and composition of components
+3. Handle page-specific state and logic
+4. Include proper navigation elements
+5. Implement responsive design for all screen sizes
+
+## Routing
+
+Pages are connected through React Router in the main App component.
+Ensure all routes are properly defined and include appropriate error handling.

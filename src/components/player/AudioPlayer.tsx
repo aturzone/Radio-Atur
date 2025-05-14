@@ -53,12 +53,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       // Load the new track
       audioRef.current.src = currentTrack.url;
       audioRef.current.load();
+      
+      // We don't auto-play here, play/pause is controlled by the isPlaying effect
     }
     
     // Set loop attribute
     if (audioRef.current) {
       audioRef.current.loop = shouldLoop;
-      // We don't auto-play here, play/pause is controlled by the isPlaying effect
+      audioRef.current.playbackRate = 1.0; // Ensure normal playback speed
     }
   }, [currentTrack, isRadioMode, onTimeUpdate, onDurationChange, shouldLoop, lastUrl]);
   
@@ -88,12 +90,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     
     if (isPlaying) {
       console.log("Attempting to play:", currentTrack.title);
+      // Ensure playback rate is normal (1.0) before playing
+      if (audioRef.current) {
+        audioRef.current.playbackRate = 1.0;
+      }
+      
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             console.log("Playback started successfully");
-            // Ensure playback rate is normal (1.0)
+            // Double-check playback rate after play starts
             if (audioRef.current) {
               audioRef.current.playbackRate = 1.0;
             }

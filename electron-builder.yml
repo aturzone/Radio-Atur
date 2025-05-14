@@ -1,0 +1,80 @@
+
+appId: app.lovable.cozy-audio-cafe
+productName: Cozy Audio Café
+copyright: Copyright © 2025
+
+directories:
+  output: dist_electron
+  buildResources: resources
+
+files:
+  - from: dist
+    to: dist
+    filter:
+      - '**/*'
+  - electron/main.js
+  - electron/preload.js
+  - package.json
+
+extraMetadata:
+  main: electron/main.js
+
+mac:
+  category: public.app-category.music
+  icon: resources/icon.icns
+  target:
+    - dmg
+    - zip
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+win:
+  icon: resources/icon.ico
+  target:
+    - nsis
+  fileAssociations:
+    - ext: [mp3, wav, ogg, flac]
+      description: Audio File
+      icon: resources/audio-file.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Cozy Audio Café
+
+linux:
+  icon: resources/icon.png
+  category: Audio;Music;Player
+  target:
+    - deb
+    - AppImage
+  desktop:
+    Name: Cozy Audio Café
+    Comment: Cozy bookshop music player
+    Exec: "{app.lovable.cozy-audio-cafe}"
+    Terminal: false
+    Type: Application
+    Categories: Audio;Music;Player
+    X-AppImage-Version: "${version}"
+  maintainer: Cozy Audio Café Team
+  afterInstall: resources/after-install.sh
+  mimeTypes:
+    - audio/mpeg
+    - audio/wav
+    - audio/ogg
+    - audio/flac
+
+deb:
+  depends:
+    - libnotify4
+    - libxtst6
+    - libnss3

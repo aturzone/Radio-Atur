@@ -1,0 +1,48 @@
+
+# Cozy Audio Café - Developer Guide
+
+This document provides guidance for developers working on the Cozy Audio Café project.
+
+## Code Organization
+
+- Keep components small and focused on a single responsibility
+- Place reusable UI components in `src/components/ui/`
+- Place player-specific components in `src/components/player/`
+- Store contexts in `src/contexts/`
+- Store pages in `src/pages/`
+- Keep utility functions in `src/utils/`
+
+## Style Guidelines
+
+- Use Tailwind CSS for styling
+- Follow the existing color scheme (coffee theme with light/dark variants)
+- Use the shadcn/ui component library for consistent UI elements
+- Ensure all UI is responsive and works on mobile devices
+
+## Adding Features
+
+When adding new features:
+
+1. Consider where the feature belongs in the existing architecture
+2. Create new components for complex UI elements
+3. Update relevant contexts if the feature requires state management
+4. Add the feature to the appropriate page
+5. Update any relevant documentation
+
+## Google Drive Integration
+
+The Google Drive integration uses:
+
+- `googleIntegration.ts` - Core API functions
+- `GoogleIntegrationContext.tsx` - React context for state management
+- `GoogleDriveConnect.tsx` - UI component for connecting to Google Drive
+
+To modify the Google Drive integration, update these files as needed.
+
+## Best Practices
+
+- Use TypeScript types for all props and state
+- Add appropriate error handling
+- Ensure accessibility (keyboard navigation, screen reader support)
+- Test on multiple browsers and devices
+- Keep bundle size small by avoiding unnecessary dependencies

@@ -1,0 +1,41 @@
+
+# Hooks Directory
+
+This directory contains custom React hooks used throughout the application.
+
+## Files
+
+- `useTheme.tsx` - Hook for managing theme state (light/dark/study/party modes)
+- `useMobile.tsx` - Hook for detecting mobile devices
+- `useToast.ts` - Hook for showing toast notifications
+
+## Core Hooks
+
+### useTheme
+
+The `useTheme` hook provides theme management functionality:
+- Toggle between light and dark modes
+- Store theme preference in localStorage
+- Apply theme classes to the document
+
+### useMobile
+
+The `useMobile` hook detects if the device is mobile:
+- Uses screen size breakpoints
+- Updates on window resize
+
+### useToast
+
+The `useToast` hook provides toast notification utilities:
+- Success, error, warning, and info toasts
+- Customizable duration and position
+
+## Creating New Hooks
+
+When creating new hooks:
+
+1. Name them with the prefix `use`
+2. Export them as named exports
+3. Document their purpose and usage
+4. Ensure they follow React's rules of hooks
+5. Keep them focused on a single responsibility

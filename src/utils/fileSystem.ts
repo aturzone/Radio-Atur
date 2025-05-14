@@ -1,5 +1,11 @@
+
 import { Track, Folder } from '../data/sampleTracks';
 import { v4 as uuidv4 } from 'uuid';
+
+// Check if File System Access API is available
+export const fileSystemAvailable = (): boolean => {
+  return 'showDirectoryPicker' in window && 'showOpenFilePicker' in window;
+};
 
 // Parse file metadata from File objects
 export const parseAudioFile = (file: File): Promise<Partial<Track>> => {

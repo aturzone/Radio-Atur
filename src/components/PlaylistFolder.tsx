@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { ChevronRight, ChevronDown, Folder, ListMusic, MoreVertical, FolderPlus, Pencil, Trash2 } from 'lucide-react';
 import { Folder as FolderType, Track } from '../data/sampleTracks';
@@ -19,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import SongOptionsMenu from './SongOptionsMenu';
 
 interface PlaylistFolderProps {
   folder: FolderType;
@@ -360,6 +360,14 @@ const PlaylistFolder: React.FC<PlaylistFolderProps> = ({
                 <div className="text-gray-dark text-xs truncate">{track.artist}</div>
               </div>
               <div className="text-gray text-xs">{track.duration}</div>
+              
+              {/* Add the SongOptionsMenu */}
+              <div onClick={(e) => e.stopPropagation()}>
+                <SongOptionsMenu 
+                  track={track} 
+                  disableDelete={folder.id === 'radio-stations-folder'}
+                />
+              </div>
             </div>
           ))}
           
