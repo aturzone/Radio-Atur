@@ -107,6 +107,7 @@ npm run build
 npm run build
 npx cap sync android
 npx cap open android
+hope it's work
 
 # Build for iOS (macOS only)
 npm run build
