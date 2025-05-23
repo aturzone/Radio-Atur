@@ -123,7 +123,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 If you enjoy using Cozy Audio Café, consider supporting the project by clicking the "Buy Me a Coffee" button in the app.
 
-## 🙏 Acknowledgments
+## ⭐️ Acknowledgments
 
 - Music samples by various artists
 - UI components powered by Shadcn UI
